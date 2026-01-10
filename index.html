@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>UNO CHALLENGE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <style>
+    :root{
+      --bg:#050816;
+      --bg2:#111827;
+      --card:#111827;
+      --accent:#f97316;
+      --accent-soft:rgba(249,115,22,.1);
+      --accent-2:#22c55e;
+      --accent-3:#38bdf8;
+      --text:#f9fafb;
+      --muted:#9ca3af;
+      --danger:#f97373;
+      --shadow:0 18px 60px rgba(0,0,0,.6);
+      --radius:18px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+      background:radial-gradient(circle at top,#1e293b 0,#020617 55%);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:12px;
+    }
+    .game-shell{
+      width:100%;
+      max-width:960px;
+      background:linear-gradient(135deg,rgba(15,23,42,.98),rgba(15,23,42,.9));
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(148,163,184,.4);
+      padding:14px 14px 18px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:6px 10px 2px;
+    }
+    .title-block{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    h1{
+      font-size:1.15rem;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+    }
+    .subtitle{
+      font-size:.72rem;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.12em;
+    }
+    .status-bar{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:.8rem;
+    }
+    .pill{
+      padding:3px 9px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.5);
+      background:rgba(15,23,42,.7);
+      display:flex;
+      align-items:center;
+      gap:6px;
+      white-space:nowrap;
+    }
+    .pill strong{font-weight:600}
+    .btn{
+      border:none;
+      border-radius:999px;
+      padding:6px 14px;
+      font-size:.8rem;
+      font-weight:600;
+      cursor:pointer;
+      color:#0b1120;
+      background:linear-gradient(135deg,#f97316,#facc15);
+      box-shadow:0 0 0 1px rgba(248,250,252,.12),0 8px 25px rgba(0,0,0,.6);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      transition:transform .08s ease, box-shadow .08s ease, filter .12s ease;
+    }
+    .btn span.emoji{font-size:1rem}
+    .btn:active{
+      transform:translateY(1px) scale(.98);
+      box-shadow:0 3px 14px rgba(0,0,0,.8);
+      filter:brightness(.98);
+    }
+
+    .layout{
+      display:grid;
+      gap:10px;
+      grid-template-columns:minmax(0,2.1fr) minmax(0,1.2fr);
+    }
+    .panel{
+      background:radial-gradient(circle at top left,rgba(30,64,175,.5),rgba(15,23,42,.9));
+      border-radius:var(--radius);
+      border:1px solid rgba(148,163,184,.35);
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      min-height:180px;
+    }
+    .panel.comp{
+      background:radial-gradient(circle at top right,rgba(220,38,38,.55),rgba(15,23,42,.95));
+    }
+    .panel h2{
+      font-size:.85rem;
+      text-transform:uppercase;
+      letter-spacing:.16em;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .badge{
+      font-size:.7rem;
+      padding:2px 9px;
+      border-radius:999px;
+      background:rgba(15,23,42,.8);
+      border:1px solid rgba(148,163,184,.6);
+    }
+
+    .zone{
+      border-radius:16px;
+      border:1px dashed rgba(148,163,184,.5);
+      padding:8px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      min-height:112px;
+    }
+
+    .stack-block{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex:1.2;
+    }
+
+    .label{
+      font-size:.75rem;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.13em;
+      margin-bottom:4px;
+    }
+
+    .computer-info{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      font-size:.8rem;
+    }
+
+    .computer-count{
+      font-size:.78rem;
+      color:var(--muted);
+    }
+
+    .deck-area{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      flex:0 0 auto;
+    }
+
+    .deck-label{
+      font-size:.7rem;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      color:var(--muted);
+    }
+
+    .deck-count{
+      font-size:.8rem;
+      color:var(--text);
+    }
+
+    .card{
+      width:74px;
+      max-width:22vw;
+      height:114px;
+      border-radius:16px;
+      background:var(--card);
+      border:3px solid #f9fafb;
+      box-shadow:0 10px 30px rgba(0,0,0,.7);
+      position:relative;
+      overflow:hidden;
+      padding:5px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+      -webkit-user-select:none;
+      touch-action:manipulation;
+      transition:transform .09s ease, box-shadow .09s ease, filter .1s ease;
+    }
+    .card-inner{
+      width:100%;
+      height:100%;
+      border-radius:14px;
+      background:#020617;
+      position:relative;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-25%;
+      background:radial-gradient(circle at top,rgba(248,250,252,.24),transparent 55%);
+      opacity:.7;
+      pointer-events:none;
+    }
+
+    .card.red .card-inner{background:radial-gradient(circle at top,#f97316,#b91c1c);}
+    .card.yellow .card-inner{background:radial-gradient(circle at top,#fde047,#f59e0b);}
+    .card.green .card-inner{background:radial-gradient(circle at top,#4ade80,#16a34a);}
+    .card.blue .card-inner{background:radial-gradient(circle at top,#60a5fa,#2563eb);}
+    .card.black .card-inner{background:radial-gradient(circle at top,#e5e7eb,#020617);}
+
+    .card.back .card-inner{
+      background:conic-gradient(from 130deg,var(--accent),var(--accent-2),var(--accent-3),var(--accent));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:900;
+      font-size:1.2rem;
+      color:#020617;
+    }
+    .card.back .card-inner span{
+      transform:skewX(-12deg);
+      text-shadow:0 1px 2px rgba(0,0,0,.6);
+    }
+
+    .card-label-main{
+      font-size:1.8rem;
+      font-weight:800;
+      color:#f9fafb;
+      text-shadow:0 3px 10px rgba(0,0,0,.55);
+    }
+    .card-type{
+      position:absolute;
+      bottom:7px;
+      right:8px;
+      font-size:.7rem;
+      font-weight:600;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      color:rgba(15,23,42,.9);
+      background:rgba(248,250,252,.88);
+      padding:3px 7px;
+      border-radius:999px;
+    }
+    .card-corner{
+      position:absolute;
+      top:7px;
+      left:8px;
+      font-size:.85rem;
+      font-weight:700;
+      color:rgba(248,250,252,.95);
+      text-shadow:0 2px 6px rgba(0,0,0,.5);
+    }
+
+    .card.playable{
+      box-shadow:0 0 0 2px rgba(248,250,252,.9),0 16px 40px rgba(34,197,94,.65);
+      transform:translateY(-3px);
+    }
+    .card.unplayable{
+      opacity:.5;
+      filter:grayscale(.4);
+    }
+    .card:hover{
+      transform:translateY(-3px);
+      box-shadow:0 12px 32px rgba(15,23,42,.8);
+      filter:brightness(1.02);
+    }
+    .card:active{
+      transform:translateY(0);
+      box-shadow:0 6px 18px rgba(15,23,42,.85);
+      filter:brightness(.96);
+    }
+
+    .hand{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      padding:4px 0 0;
+      justify-content:flex-start;
+    }
+
+    .instructions{
+      font-size:.75rem;
+      color:var(--muted);
+      line-height:1.5;
+      padding:4px 1px 0;
+    }
+    .instructions strong{color:#e5e7eb;font-weight:600}
+
+    .message-bar{
+      margin-top:4px;
+      min-height:20px;
+      font-size:.78rem;
+      color:var(--accent-3);
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:16px;
+      transform:translateX(-50%) translateY(50px);
+      background:rgba(15,23,42,.96);
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.9);
+      padding:7px 14px;
+      font-size:.8rem;
+      color:#e5e7eb;
+      box-shadow:0 18px 50px rgba(0,0,0,.8);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .18s ease, transform .18s ease;
+      z-index:30;
+    }
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:radial-gradient(circle at top,#111827e6,#020617f2);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      visibility:hidden;
+      opacity:0;
+      transition:opacity .18s ease,visibility .18s ease;
+      z-index:25;
+    }
+    .overlay.show{
+      visibility:visible;
+      opacity:1;
+    }
+    .overlay-card{
+      background:radial-gradient(circle at top,rgba(251,191,36,.12),rgba(15,23,42,.98));
+      border-radius:26px;
+      border:1px solid rgba(250,204,21,.7);
+      padding:18px 18px 16px;
+      max-width:340px;
+      text-align:center;
+      box-shadow:0 30px 90px rgba(0,0,0,.9);
+    }
+    .overlay-card h3{
+      font-size:1.15rem;
+      margin-bottom:6px;
+    }
+    .overlay-card p{
+      font-size:.9rem;
+      color:var(--muted);
+      margin-bottom:10px;
+    }
+    .overlay-stats{
+      display:flex;
+      justify-content:space-between;
+      gap:6px;
+      margin:8px 0 10px;
+      font-size:.85rem;
+    }
+    .overlay-stat{
+      flex:1;
+      padding:8px 10px;
+      border-radius:14px;
+      background:rgba(15,23,42,.9);
+      border:1px solid rgba(148,163,184,.7);
+    }
+    .overlay-stat span.label{
+      font-size:.7rem;
+      text-transform:uppercase;
+      letter-spacing:.18em;
+      color:var(--muted);
+      display:block;
+      margin-bottom:2px;
+    }
+    .overlay-stat strong{
+      font-size:.95rem;
+    }
+
+    .overlay .btn{
+      width:100%;
+      justify-content:center;
+      margin-top:4px;
+    }
+
+    @media (max-width:768px){
+      .game-shell{
+        padding:10px 10px 14px;
+        border-radius:22px;
+      }
+      header{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .layout{
+        grid-template-columns:1fr;
+      }
+      .zone{
+        flex-direction:column;
+        align-items:flex-start;
+        min-height:0;
+      }
+      .stack-block{
+        width:100%;
+      }
+      .deck-area{
+        flex-direction:row;
+        justify-content:flex-start;
+        width:100%;
+      }
+      .card{
+        width:70px;
+        height:108px;
+      }
+      .hand{
+        justify-content:flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <header>
+      <div class="title-block">
+        <h1>UNO CHALLENGE</h1>
+        <div class="subtitle">Race your friends · empty your hand fastest</div>
+      </div>
+      <div class="status-bar">
+        <div class="pill">
+          <span>⏱</span>
+          <span><strong id="timer">00.0</strong> sec</span>
+        </div>
+        <div class="pill">
+          <span>🏅</span>
+          <span>Best: <strong id="best-time">--</strong></span>
+        </div>
+        <button class="btn" id="new-game-btn"><span class="emoji">🔁</span><span>New Game</span></button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- Computer panel -->
+      <section class="panel comp">
+        <h2>
+          Computer Stack
+          <span class="badge">Match this card</span>
+        </h2>
+        <div class="zone">
+          <div class="stack-block">
+            <div>
+              <div class="label">Current computer card</div>
+              <div id="computer-card" style="display:flex;align-items:center;gap:10px;">
+                <!-- card rendered here -->
+              </div>
+            </div>
+            <div class="computer-info">
+              <div class="computer-count">
+                Computer cards left: <strong id="computer-count">7</strong>
+              </div>
+              <div class="computer-count">
+                Hint: Match <strong>color</strong> or <strong>number / symbol</strong>, or use a <strong>Wild</strong>.
+              </div>
+              <div class="computer-count">
+                If computer plays <strong>+2 / +4</strong> and you have no +2/+4, you must draw extra cards.
+              </div>
+            </div>
+          </div>
+          <div class="deck-area">
+            <div class="deck-label">Draw Deck</div>
+            <div id="draw-deck" class="card back" title="Tap to draw a card">
+              <div class="card-inner"><span>UNO</span></div>
+            </div>
+            <div class="deck-count">Cards left: <strong id="deck-count">--</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Player panel -->
+      <section class="panel">
+        <h2>
+          Your Hand
+          <span class="badge" id="player-count-pill">7 cards</span>
+        </h2>
+        <div class="label">Tap a highlighted card to play</div>
+        <div id="player-hand" class="hand">
+          <!-- player cards -->
+        </div>
+        <div class="instructions">
+          <strong>How to play:</strong> Match the computer card by <strong>color</strong> or <strong>number / symbol</strong>, or play a <strong>Wild / +4</strong> at any time.
+          If you can&rsquo;t play, tap the <strong>Draw Deck</strong> to gain a new card. Race to clear your hand &mdash; share your best time with friends!
+        </div>
+        <div class="message-bar" id="message-bar"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div id="overlay" class="overlay">
+    <div class="overlay-card">
+      <h3>Hand Cleared! 🎉</h3>
+      <p>You’ve played all your cards. Compare your time with friends and try to beat it!</p>
+      <div class="overlay-stats">
+        <div class="overlay-stat">
+          <span class="label">This run</span>
+          <strong id="overlay-time">--</strong>
+        </div>
+        <div class="overlay-stat">
+          <span class="label">Best time</span>
+          <strong id="overlay-best">--</strong>
+        </div>
+      </div>
+      <button class="btn" id="play-again-btn"><span class="emoji">🔁</span><span>Play Again</span></button>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const COLORS = ["red","yellow","green","blue"];
+      const NUMBER_VALUES = ["0","1","2","3","4","5","6","7","8","9"];
+
+      let deck = [];
+      let playerHand = [];
+      let computerStack = [];
+      let currentComputerCard = null;
+
+      let gameStarted = false;
+      let startTime = null;
+      let timerInterval = null;
+      let bestTime = null;
+
+      const playerHandEl = document.getElementById("player-hand");
+      const computerCardEl = document.getElementById("computer-card");
+      const computerCountEl = document.getElementById("computer-count");
+      const playerCountPill = document.getElementById("player-count-pill");
+      const deckCountEl = document.getElementById("deck-count");
+      const drawDeckEl = document.getElementById("draw-deck");
+      const timerEl = document.getElementById("timer");
+      const bestTimeEl = document.getElementById("best-time");
+      const messageBar = document.getElementById("message-bar");
+      const toastEl = document.getElementById("toast");
+      const overlayEl = document.getElementById("overlay");
+      const overlayTimeEl = document.getElementById("overlay-time");
+      const overlayBestEl = document.getElementById("overlay-best");
+      const newGameBtn = document.getElementById("new-game-btn");
+      const playAgainBtn = document.getElementById("play-again-btn");
+
+      let penaltyAppliedForThisCard = false;
+
+      function createDeck(){
+        const cards = [];
+        COLORS.forEach(color=>{
+          NUMBER_VALUES.forEach(v=>{
+            cards.push({color, type:"number", value:v});
+          });
+          cards.push({color, type:"skip", value:"SKIP"});
+          cards.push({color, type:"reverse", value:"REV"});
+          cards.push({color, type:"draw2", value:"+2"});
+        });
+        for(let i=0;i<4;i++){
+          cards.push({color:"black", type:"wild", value:"WILD"});
+          cards.push({color:"black", type:"draw4", value:"+4"});
+        }
+        // shuffle
+        for(let i=cards.length-1;i>0;i--){
+          const j = Math.floor(Math.random()*(i+1));
+          [cards[i],cards[j]]=[cards[j],cards[i]];
+        }
+        return cards;
+      }
+
+      function formatTime(ms){
+        if(ms==null) return "--";
+        const s = ms/1000;
+        return s.toFixed(1);
+      }
+
+      function loadBestTime(){
+        try{
+          const stored = localStorage.getItem("unoChallengeBestTime");
+          if(stored){
+            bestTime = parseFloat(stored);
+          }
+        }catch(e){}
+        if(bestTime!=null){
+          bestTimeEl.textContent = bestTime.toFixed(1)+"s";
+        }else{
+          bestTimeEl.textContent = "--";
+        }
+      }
+
+      function saveBestTime(ms){
+        if(bestTime==null || ms<bestTime){
+          bestTime = ms;
+          try{
+            localStorage.setItem("unoChallengeBestTime",String(ms));
+          }catch(e){}
+        }
+        bestTimeEl.textContent = bestTime.toFixed(1)+"s";
+      }
+
+      function startTimer(){
+        stopTimer();
+        startTime = performance.now();
+        timerInterval = setInterval(()=>{
+          if(!gameStarted || !startTime) return;
+          const now = performance.now();
+          timerEl.textContent = formatTime(now-startTime);
+        },80);
+      }
+      function stopTimer(){
+        if(timerInterval){
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+      }
+
+      function canPlay(card,target){
+        if(!card || !target) return false;
+
+        // Wild & +4 are always allowed
+        if(card.type==="wild" || card.type==="draw4") return true;
+
+        // If computer card is +2/+4, allow +2/+4 regardless of color
+        if((target.type==="draw2"||target.type==="draw4") &&
+           (card.type==="draw2"||card.type==="draw4")) return true;
+
+        // Same color
+        if(card.color === target.color) return true;
+
+        // Number match
+        if(card.type==="number" && target.type==="number" && card.value===target.value) return true;
+
+        // Same action type (skip/reverse/draw2)
+        if(card.type!=="number" && card.type===target.type) return true;
+
+        return false;
+      }
+
+      function renderCard(card, opts={}){
+        if(!card){
+          return `<div class="card unplayable"><div class="card-inner"></div></div>`;
+        }
+        const playableClass = opts.playable ? "playable" : (opts.dim ? "unplayable" : "");
+        const colorClass = card.color==="black" ? "black" : card.color;
+        const label = cardLabel(card);
+        const sub = cardSubLabel(card);
+        return `
+          <div class="card ${colorClass} ${playableClass}" data-index="${opts.index!=null?opts.index:""}">
+            <div class="card-inner">
+              <div class="card-corner">${label}</div>
+              <div class="card-label-main">${label}</div>
+              <div class="card-type">${sub}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function cardLabel(card){
+        if(card.type==="number") return card.value;
+        if(card.type==="draw2") return "+2";
+        if(card.type==="draw4") return "+4";
+        if(card.type==="skip") return "⏭";
+        if(card.type==="reverse") return "↺";
+        if(card.type==="wild") return "★";
+        return "?";
+      }
+      function cardSubLabel(card){
+        if(card.type==="number") return "NUMBER";
+        if(card.type==="draw2") return "DRAW 2";
+        if(card.type==="draw4") return "DRAW 4";
+        if(card.type==="skip") return "SKIP";
+        if(card.type==="reverse") return "REVERSE";
+        if(card.type==="wild") return "WILD";
+        return "";
+      }
+
+      function renderGame(){
+        // computer card
+        computerCardEl.innerHTML = currentComputerCard
+          ? renderCard(currentComputerCard,{dim:false})
+          : `<div class="card unplayable"><div class="card-inner"></div></div>`;
+        // computer count
+        computerCountEl.textContent = computerStack.length;
+
+        // player hand
+        const html = playerHand.map((card,idx)=>{
+          const playable = currentComputerCard ? canPlay(card,currentComputerCard) : false;
+          return renderCard(card,{playable,index:idx});
+        }).join("");
+        playerHandEl.innerHTML = html || `<div style="font-size:.8rem;color:var(--muted);padding:4px 0;">You have no cards. 🎉</div>`;
+        playerCountPill.textContent = playerHand.length + (playerHand.length===1?" card":" cards");
+
+        // deck count
+        deckCountEl.textContent = deck.length;
+      }
+
+      function showMessage(text){
+        messageBar.textContent = text || "";
+      }
+
+      function showToast(text){
+        if(!text) return;
+        toastEl.textContent = text;
+        toastEl.classList.add("show");
+        setTimeout(()=>toastEl.classList.remove("show"),1600);
+      }
+
+      function drawCards(count){
+        for(let i=0;i<count;i++){
+          if(deck.length===0) break;
+          playerHand.push(deck.pop());
+        }
+        renderGame();
+      }
+
+      function applyDrawPenaltyIfNeeded(){
+        penaltyAppliedForThisCard = false;
+        if(!currentComputerCard) return;
+
+        if(currentComputerCard.type==="draw2" || currentComputerCard.type==="draw4"){
+          const need = currentComputerCard.type==="draw4" ? 4 : 2;
+          const hasCounter = playerHand.some(c=>c.type==="draw2"||c.type==="draw4");
+          if(!hasCounter){
+            drawCards(need);
+            showToast(`No +2/+4 in hand. You draw ${need} extra card${need>1?"s":""}.`);
+            penaltyAppliedForThisCard = true;
+          }else{
+            showMessage("You may counter with your own +2 or +4, or draw from deck.");
+          }
+        }else{
+          showMessage("Match color or number/symbol, or use a Wild / +4.");
+        }
+      }
+
+      function nextComputerCard(){
+        if(computerStack.length>0){
+          currentComputerCard = computerStack.shift();
+        }else if(deck.length>0){
+          currentComputerCard = deck.pop();
+        }else{
+          currentComputerCard = null;
+        }
+        renderGame();
+        applyDrawPenaltyIfNeeded();
+      }
+
+      function endGame(){
+        gameStarted = false;
+        stopTimer();
+        const now = performance.now();
+        const elapsed = now - startTime;
+        const pretty = formatTime(elapsed)+"s";
+        overlayTimeEl.textContent = pretty;
+        if(bestTime==null || elapsed<bestTime){
+          saveBestTime(elapsed);
+        }
+        overlayBestEl.textContent = bestTime ? bestTime.toFixed(1)+"s" : "--";
+        overlayEl.classList.add("show");
+      }
+
+      function handleCardClick(e){
+        const cardEl = e.target.closest(".card");
+        if(!cardEl || !cardEl.hasAttribute("data-index")) return;
+        if(!gameStarted || currentComputerCard==null) return;
+        const idx = parseInt(cardEl.getAttribute("data-index"),10);
+        if(Number.isNaN(idx) || idx<0 || idx>=playerHand.length) return;
+
+        const card = playerHand[idx];
+        if(!canPlay(card,currentComputerCard)){
+          showToast("You can't play that card on this one.");
+          return;
+        }
+
+        playerHand.splice(idx,1);
+        renderGame();
+
+        if(playerHand.length===0){
+          endGame();
+          return;
+        }
+
+        nextComputerCard();
+      }
+
+      function handleDrawClick(){
+        if(!gameStarted) return;
+        if(deck.length===0){
+          showToast("No more cards left in the draw deck.");
+          return;
+        }
+        drawCards(1);
+        showMessage("You drew a card. If still stuck, draw again.");
+      }
+
+      function resetGame(){
+        deck = createDeck();
+        playerHand = [];
+        computerStack = [];
+        currentComputerCard = null;
+        gameStarted = true;
+        messageBar.textContent = "";
+        overlayEl.classList.remove("show");
+
+        // deal 7 each
+        playerHand = deck.splice(0,7);
+        computerStack = deck.splice(0,7);
+
+        renderGame();
+        nextComputerCard();
+        startTimer();
+      }
+
+      // event listeners
+      playerHandEl.addEventListener("click",handleCardClick);
+      drawDeckEl.addEventListener("click",handleDrawClick);
+      newGameBtn.addEventListener("click",resetGame);
+      playAgainBtn.addEventListener("click",resetGame);
+
+      // init
+      loadBestTime();
+      resetGame(); // auto start
+    })();
+  </script>
+</body>
+</html>
