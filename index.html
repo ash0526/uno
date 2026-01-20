@@ -1,3 +1,4 @@
+```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -70,6 +71,8 @@
       align-items:center;
       gap:8px;
       font-size:.8rem;
+      flex-wrap:wrap;
+      justify-content:flex-end;
     }
     .pill{
       padding:3px 9px;
@@ -95,13 +98,18 @@
       display:inline-flex;
       align-items:center;
       gap:6px;
-      transition:transform .08s ease, box-shadow .08s ease, filter .12s ease;
+      transition:transform .08s ease, box-shadow .08s ease, filter .12s ease, opacity .12s ease;
     }
     .btn span.emoji{font-size:1rem}
     .btn:active{
       transform:translateY(1px) scale(.98);
       box-shadow:0 3px 14px rgba(0,0,0,.8);
       filter:brightness(.98);
+    }
+    .btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      filter:saturate(.8);
     }
 
     .layout{
@@ -468,6 +476,10 @@
           <span>🏅</span>
           <span>Best: <strong id="best-time">--</strong></span>
         </div>
+
+        <!-- Start button -->
+        <button class="btn" id="start-game-btn"><span class="emoji">▶️</span><span>Start Game</span></button>
+
         <button class="btn" id="new-game-btn"><span class="emoji">🔁</span><span>New Game</span></button>
       </div>
     </header>
@@ -532,11 +544,11 @@
 
   <div id="overlay" class="overlay">
     <div class="overlay-card">
-      <h3>Hand Cleared! 🎉</h3>
-      <p>You’ve played all your cards. Compare your time with friends and try to beat it!</p>
+      <h3 id="overlay-title">Game Over</h3>
+      <p id="overlay-desc">Play again?</p>
       <div class="overlay-stats">
         <div class="overlay-stat">
-          <span class="label">This run</span>
+          <span class="label">Result</span>
           <strong id="overlay-time">--</strong>
         </div>
         <div class="overlay-stat">
@@ -576,10 +588,11 @@
       const overlayEl = document.getElementById("overlay");
       const overlayTimeEl = document.getElementById("overlay-time");
       const overlayBestEl = document.getElementById("overlay-best");
+      const overlayTitleEl = document.getElementById("overlay-title");
+      const overlayDescEl = document.getElementById("overlay-desc");
       const newGameBtn = document.getElementById("new-game-btn");
       const playAgainBtn = document.getElementById("play-again-btn");
-
-      let penaltyAppliedForThisCard = false;
+      const startGameBtn = document.getElementById("start-game-btn");
 
       function createDeck(){
         const cards = [];
@@ -595,7 +608,6 @@
           cards.push({color:"black", type:"wild", value:"WILD"});
           cards.push({color:"black", type:"draw4", value:"+4"});
         }
-        // shuffle
         for(let i=cards.length-1;i>0;i--){
           const j = Math.floor(Math.random()*(i+1));
           [cards[i],cards[j]]=[cards[j],cards[i]];
@@ -604,31 +616,22 @@
       }
 
       function formatTime(ms){
-        if(ms==null) return "--";
-        const s = ms/1000;
-        return s.toFixed(1);
+        if(ms==null) return "00.0";
+        return (ms/1000).toFixed(1);
       }
 
       function loadBestTime(){
         try{
           const stored = localStorage.getItem("unoChallengeBestTime");
-          if(stored){
-            bestTime = parseFloat(stored);
-          }
+          if(stored) bestTime = parseFloat(stored);
         }catch(e){}
-        if(bestTime!=null){
-          bestTimeEl.textContent = bestTime.toFixed(1)+"s";
-        }else{
-          bestTimeEl.textContent = "--";
-        }
+        bestTimeEl.textContent = bestTime!=null ? bestTime.toFixed(1)+"s" : "--";
       }
 
       function saveBestTime(ms){
         if(bestTime==null || ms<bestTime){
           bestTime = ms;
-          try{
-            localStorage.setItem("unoChallengeBestTime",String(ms));
-          }catch(e){}
+          try{ localStorage.setItem("unoChallengeBestTime",String(ms)); }catch(e){}
         }
         bestTimeEl.textContent = bestTime.toFixed(1)+"s";
       }
@@ -638,8 +641,7 @@
         startTime = performance.now();
         timerInterval = setInterval(()=>{
           if(!gameStarted || !startTime) return;
-          const now = performance.now();
-          timerEl.textContent = formatTime(now-startTime);
+          timerEl.textContent = formatTime(performance.now()-startTime);
         },80);
       }
       function stopTimer(){
@@ -651,23 +653,12 @@
 
       function canPlay(card,target){
         if(!card || !target) return false;
-
-        // Wild & +4 are always allowed
         if(card.type==="wild" || card.type==="draw4") return true;
-
-        // If computer card is +2/+4, allow +2/+4 regardless of color
         if((target.type==="draw2"||target.type==="draw4") &&
            (card.type==="draw2"||card.type==="draw4")) return true;
-
-        // Same color
         if(card.color === target.color) return true;
-
-        // Number match
         if(card.type==="number" && target.type==="number" && card.value===target.value) return true;
-
-        // Same action type (skip/reverse/draw2)
         if(card.type!=="number" && card.type===target.type) return true;
-
         return false;
       }
 
@@ -710,28 +701,29 @@
       }
 
       function renderGame(){
-        // computer card
         computerCardEl.innerHTML = currentComputerCard
           ? renderCard(currentComputerCard,{dim:false})
           : `<div class="card unplayable"><div class="card-inner"></div></div>`;
-        // computer count
+
         computerCountEl.textContent = computerStack.length;
 
-        // player hand
         const html = playerHand.map((card,idx)=>{
-          const playable = currentComputerCard ? canPlay(card,currentComputerCard) : false;
-          return renderCard(card,{playable,index:idx});
+          const playable = (gameStarted && currentComputerCard) ? canPlay(card,currentComputerCard) : false;
+          const dim = !gameStarted;
+          return renderCard(card,{playable: playable && gameStarted, dim, index:idx});
         }).join("");
-        playerHandEl.innerHTML = html || `<div style="font-size:.8rem;color:var(--muted);padding:4px 0;">You have no cards. 🎉</div>`;
-        playerCountPill.textContent = playerHand.length + (playerHand.length===1?" card":" cards");
 
-        // deck count
+        if(!gameStarted && playerHand.length===0){
+          playerHandEl.innerHTML = `<div style="font-size:.8rem;color:var(--muted);padding:4px 0;">Press <strong>Start Game</strong> to begin.</div>`;
+        } else {
+          playerHandEl.innerHTML = html || `<div style="font-size:.8rem;color:var(--muted);padding:4px 0;">You have no cards.</div>`;
+        }
+
+        playerCountPill.textContent = playerHand.length + (playerHand.length===1?" card":" cards");
         deckCountEl.textContent = deck.length;
       }
 
-      function showMessage(text){
-        messageBar.textContent = text || "";
-      }
+      function showMessage(text){ messageBar.textContent = text || ""; }
 
       function showToast(text){
         if(!text) return;
@@ -749,7 +741,6 @@
       }
 
       function applyDrawPenaltyIfNeeded(){
-        penaltyAppliedForThisCard = false;
         if(!currentComputerCard) return;
 
         if(currentComputerCard.type==="draw2" || currentComputerCard.type==="draw4"){
@@ -758,7 +749,6 @@
           if(!hasCounter){
             drawCards(need);
             showToast(`No +2/+4 in hand. You draw ${need} extra card${need>1?"s":""}.`);
-            penaltyAppliedForThisCard = true;
           }else{
             showMessage("You may counter with your own +2 or +4, or draw from deck.");
           }
@@ -767,36 +757,67 @@
         }
       }
 
+      // ===== NEW: end when either side reaches 0 cards =====
+      function endGameWin(){
+        gameStarted = false;
+        stopTimer();
+        startGameBtn.disabled = false;
+
+        const elapsed = performance.now() - startTime;
+        overlayTitleEl.textContent = "You Won! 🎉";
+        overlayDescEl.textContent = "You cleared your hand first. Try to beat your best time!";
+        overlayTimeEl.textContent = formatTime(elapsed) + "s";
+
+        if(bestTime==null || elapsed<bestTime) saveBestTime(elapsed);
+        overlayBestEl.textContent = bestTime ? bestTime.toFixed(1)+"s" : "--";
+
+        overlayEl.classList.add("show");
+      }
+
+      function endGameLose(){
+        gameStarted = false;
+        stopTimer();
+        startGameBtn.disabled = false;
+
+        const elapsed = performance.now() - startTime;
+        overlayTitleEl.textContent = "You Lost 💥";
+        overlayDescEl.textContent = "The computer ran out of cards first. Try again!";
+        overlayTimeEl.textContent = formatTime(elapsed) + "s";
+        overlayBestEl.textContent = bestTime ? bestTime.toFixed(1)+"s" : "--";
+
+        overlayEl.classList.add("show");
+      }
+
       function nextComputerCard(){
-        if(computerStack.length>0){
-          currentComputerCard = computerStack.shift();
-        }else if(deck.length>0){
-          currentComputerCard = deck.pop();
-        }else{
-          currentComputerCard = null;
+        // If computer has 0 cards -> game ends (you lose)
+        if(computerStack.length === 0){
+          endGameLose();
+          return;
         }
+
+        currentComputerCard = computerStack.shift();
+
+        // If that play made them hit 0 (it won't, because shift already removed),
+        // but for clarity: if now 0, they just played their last card -> lose for player.
+        if(computerStack.length === 0){
+          renderGame();
+          endGameLose();
+          return;
+        }
+
         renderGame();
         applyDrawPenaltyIfNeeded();
       }
 
-      function endGame(){
-        gameStarted = false;
-        stopTimer();
-        const now = performance.now();
-        const elapsed = now - startTime;
-        const pretty = formatTime(elapsed)+"s";
-        overlayTimeEl.textContent = pretty;
-        if(bestTime==null || elapsed<bestTime){
-          saveBestTime(elapsed);
-        }
-        overlayBestEl.textContent = bestTime ? bestTime.toFixed(1)+"s" : "--";
-        overlayEl.classList.add("show");
-      }
-
       function handleCardClick(e){
+        if(!gameStarted){
+          showToast("Press Start Game first!");
+          return;
+        }
         const cardEl = e.target.closest(".card");
         if(!cardEl || !cardEl.hasAttribute("data-index")) return;
-        if(!gameStarted || currentComputerCard==null) return;
+        if(currentComputerCard==null) return;
+
         const idx = parseInt(cardEl.getAttribute("data-index"),10);
         if(Number.isNaN(idx) || idx<0 || idx>=playerHand.length) return;
 
@@ -809,8 +830,9 @@
         playerHand.splice(idx,1);
         renderGame();
 
+        // If YOU have 0 -> you win
         if(playerHand.length===0){
-          endGame();
+          endGameWin();
           return;
         }
 
@@ -818,7 +840,10 @@
       }
 
       function handleDrawClick(){
-        if(!gameStarted) return;
+        if(!gameStarted){
+          showToast("Press Start Game first!");
+          return;
+        }
         if(deck.length===0){
           showToast("No more cards left in the draw deck.");
           return;
@@ -827,12 +852,26 @@
         showMessage("You drew a card. If still stuck, draw again.");
       }
 
-      function resetGame(){
+      function setupPreGame(){
+        deck = [];
+        playerHand = [];
+        computerStack = [];
+        currentComputerCard = null;
+        gameStarted = false;
+        stopTimer();
+        timerEl.textContent = "00.0";
+        showMessage("Press Start Game to begin.");
+        overlayEl.classList.remove("show");
+        startGameBtn.disabled = false;
+        renderGame();
+      }
+
+      function resetGame(startNow=true){
         deck = createDeck();
         playerHand = [];
         computerStack = [];
         currentComputerCard = null;
-        gameStarted = true;
+
         messageBar.textContent = "";
         overlayEl.classList.remove("show");
 
@@ -841,20 +880,35 @@
         computerStack = deck.splice(0,7);
 
         renderGame();
-        nextComputerCard();
-        startTimer();
+
+        if(startNow){
+          gameStarted = true;
+          startGameBtn.disabled = true;
+          nextComputerCard();
+          startTimer();
+        }else{
+          gameStarted = false;
+          startGameBtn.disabled = false;
+          showMessage("Press Start Game to begin.");
+          renderGame();
+        }
       }
 
-      // event listeners
+      // listeners
       playerHandEl.addEventListener("click",handleCardClick);
       drawDeckEl.addEventListener("click",handleDrawClick);
-      newGameBtn.addEventListener("click",resetGame);
-      playAgainBtn.addEventListener("click",resetGame);
 
-      // init
+      startGameBtn.addEventListener("click",()=>{
+        if(!gameStarted) resetGame(true);
+      });
+
+      newGameBtn.addEventListener("click",()=>resetGame(true));
+      playAgainBtn.addEventListener("click",()=>resetGame(true));
+
       loadBestTime();
-      resetGame(); // auto start
+      setupPreGame();
     })();
   </script>
 </body>
 </html>
+```
